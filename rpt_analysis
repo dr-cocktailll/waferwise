@@ -1,0 +1,83 @@
+"""
+rpt_analysis.py
+
+Performs analysis on Random Processing Times (RPT) using bootstrapping and Monte Carlo,
+and computes failure probabilities (exceeding available tool time).
+
+References: Question 2 from ArrivalEvent project.
+"""
+
+import pandas as pd
+import numpy as np
+from scipy.stats import shapiro
+
+def bootstrap_rpt(data, n_iterations=10000):
+    """
+    Perform bootstrap on the given RPT sample data
+    to estimate distribution (mean, std, etc.).
+    
+    :param data: 1D array or list of RPT values
+    :param n_iterations: number of bootstrap samples
+    :return: dict with estimates (mean, std, confidence intervals, etc.)
+    """
+    means = []
+    n = len(data)
+    for _ in range(n_iterations):
+        sample = np.random.choice(data, size=n, replace=True)
+        means.append(sample.mean())
+    
+    mean_est = np.mean(means)
+    ci_lower = np.percentile(means, 2.5)
+    ci_upper = np.percentile(means, 97.5)
+    
+    return {
+        'bootstrap_mean': mean_est,
+        '95pct_CI': (ci_lower, ci_upper)
+    }
+
+def monte_carlo_simulation(mean, std, n_weeks=13, threshold=100000):
+    """
+    Run a Monte Carlo simulation to see how often total 
+    processing time exceeds a threshold (per quarter, for example).
+
+    :param mean: Mean of RPT per wafer (or workload metric).
+    :param std: Std dev of RPT.
+    :param n_weeks: Usually 13 weeks in a quarter.
+    :param threshold: The total available tool time each quarter.
+    :return: Probability of exceeding threshold at least once.
+    """
+    n_sim = 10000
+    exceed_count = 0
+    for _ in range(n_sim):
+        # Example: sum of 13 random draws from normal distribution
+        total_time = 0
+        for _ in range(n_weeks):
+            daily_rpt = np.random.normal(loc=mean, scale=std)
+            total_time += max(0, daily_rpt)  # ensure no negative
+        if total_time > threshold:
+            exceed_count += 1
+    
+    return exceed_count / n_sim
+
+def probability_of_failure_in_quarters(prob_week_failure, n_weeks=13):
+    """
+    Using P(at least one failure in a quarter) = 1 - (1 - p)^13
+    or similarly for multiple quarters.
+
+    :param prob_week_failure: Probability of failing in a single week
+    :param n_weeks: number of weeks in a quarter
+    :return: Probability of at least 1 failure in a quarter
+    """
+    return 1.0 - (1.0 - prob_week_failure)**n_weeks
+
+if __name__ == "__main__":
+    # Example usage
+    sample_rpt = np.random.normal(500, 50, 2000)  # stub dataset
+    results = bootstrap_rpt(sample_rpt)
+    print("Bootstrap results:", results)
+    
+    prob_exceed = monte_carlo_simulation(mean=500, std=50, threshold=7000)
+    print("Monte Carlo - Probability of exceeding 7000 in a quarter:", prob_exceed)
+    
+    prob_quarter_failure = probability_of_failure_in_quarters(prob_exceed, n_weeks=13)
+    print("Probability of at least one failure in a quarter:", prob_quarter_failure)
