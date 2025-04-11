@@ -3,7 +3,7 @@ A Semiconductor Wafer Loading &amp; Tool Requirement Analysis
 
 # ArrivalEvent
 
-A comprehensive wafer production and tool capacity planning project, developed for the **Micron NUS-ISE Business Analytics Case Competition 2025**, focusing on **semiconductor manufacturing** strategies from 2026 to 2027.
+A comprehensive wafer production and tool capacity planning project, focusing on **semiconductor manufacturing** strategies.
 
 ---
 
